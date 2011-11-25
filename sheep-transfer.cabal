@@ -1,0 +1,19 @@
+Name:                sheep-transfer
+Version:             0.1
+Synopsis:            Transfer files between computers in LAN network
+License:             BSD3
+License-file:        LICENSE
+Author:              Krzysztof Skrzętnicki
+Maintainer:          gtener@gmail.com
+Category:            Network
+Build-type:          Simple
+Cabal-version:       >=1.2
+
+Executable sheep-transfer
+  Main-is:             sheep.hs
+  Build-depends:       base, containers, unordered-containers, attoparsec, 
+                       attoparsec-binary, network, network-multicast, simple-sendfile,
+                       gtk, bytestring, filepath, directory, cereal,
+                       process, random, utf8-string, derive
+  Other-modules:       Parser, DataTypes, ProtocolWriter, ProtocolReader, Serialize
+  

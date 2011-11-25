@@ -7,7 +7,7 @@ data NetworkMulticastMessage = Hello String | Goodbye String
 
 type FileId = Integer
 
-data NetworkDirectMessage = Begin FileId ByteString ByteString -- filename, file id, checksum
+data NetworkDirectMessage = Begin FileId ByteString ByteString -- file id, filename, checksum
                           | Chunk FileId ByteString -- file id, file chunk (small, like 1024 * 8)
                           | Finished FileId
                           | Quit

@@ -16,14 +16,13 @@ parseNumberVariable = do
   bs <- take (fromIntegral n)
   return (BS.foldl' (\ acc w8 -> (fromIntegral w8) + (acc * 256)) 0 bs)
 
+takeWithLength = (take . fromIntegral) =<< anyWord64le
+
 beginParser = do
   string "begin"
-  fieldLen'1 <- fromIntegral <$> parseNumberVariable
-  fileName <- take fieldLen'1
-  fileId <- parseNumberVariable
-  fieldLen'2 <- fromIntegral <$> parseNumberVariable
-  checksum <- take fieldLen'2
-  
+  fileId <- fromIntegral <$> anyWord64le 
+  fileName <- takeWithLength
+  checksum <- takeWithLength
   return (Begin fileId fileName checksum)
 
 chunkParser = do
