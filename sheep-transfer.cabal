@@ -11,9 +11,9 @@ Cabal-version:       >=1.2
 
 Executable sheep-transfer
   Main-is:             sheep.hs
-  Build-depends:       base, containers, unordered-containers, attoparsec, 
-                       attoparsec-binary, network, network-multicast, simple-sendfile,
-                       gtk, bytestring, filepath, directory, cereal,
+  Build-depends:       base, unordered-containers, 
+                       network, network-multicast,
+                       gtk, bytestring, filepath, cereal,
                        process, random, utf8-string, derive
-  Other-modules:       Parser, DataTypes, ProtocolWriter, ProtocolReader, Serialize
+  Other-modules:       DataTypes, Serialize
   

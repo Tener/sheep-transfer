@@ -1,7 +1,6 @@
 module Main where
 
 import Network.Multicast
-import Network.Sendfile
 import Network.Socket hiding (send, sendTo, recv, recvFrom)
 import qualified Network.Socket
 import Network.Socket.ByteString
@@ -13,21 +12,17 @@ import qualified Data.ByteString.UTF8 as BS_UTF8
 import qualified Data.HashMap.Strict as HM
 
 import Control.Concurrent
-import System.Process -- hostname
+import Control.Exception
 import Control.Monad
-
+import System.Process
 import System.IO (hClose, openFile, IOMode(..))
 import System.FilePath
-import Control.Exception
--- import Data.Attoparsec
 import System.Random
-import Data.Serialize --  (runPut, runGetPartial, get)
+
+import Data.Serialize
 
 -- 
-import ProtocolWriter
-import Parser
 import DataTypes
-
 import Serialize ()
 
 hostname :: IO String
@@ -85,48 +80,6 @@ clientDirect s who = do
         return bs
 
   go (Just HM.empty) (Partial (runGetPartial get))
-  
-{-
-clientDirect' s who = do
-  print "a new direct client!"
-  print who
-  let go unconsumed state = do
-       res <- parseWith (recv s 4096) networkMessageParser unconsumed
-       case res of
-         Fail a b c -> error (show ("clientDirect: Fail", a, b, c))
-         Partial _p -> error (show ("clientDirect: Partial"))
-         Done unconsumed'2 msg -> workWithMessage state unconsumed'2 msg 
-
-      workWithMessage state _ Quit = do
-                              print ("Quitting...",who)
-                              mapM_ hClose (HM.elems state)
-      workWithMessage state unc (Finished fid) = do
-                              print ("Finished", fid)
-                              case HM.lookup fid state of
-                                Nothing -> return ()
-                                Just h -> hClose h
-                              go unc (HM.delete fid state)
-      workWithMessage state unc (Chunk fid bs) = do
-                              print ("Chunk", fid, BS.length bs)
-                              case HM.lookup fid state of
-                                Nothing -> return ()
-                                Just h -> BS.hPut h bs
-                              go unc state
-      workWithMessage state unc (Begin fid fname checksum) = do
-                              print ("Begin", fid, fname, checksum)
-                              case HM.lookup fid state of
-                                Nothing -> do
-                                  name <- getRandomName
-                                  writeFile ("files" </> (name <.> "txt")) (show (who,fid,fname,checksum))
-                                  h <- openFile ("files" </> (name <.> "dat")) WriteMode
-                                  go unc (HM.insert fid h state)
-                                Just _ -> do
-                                  print "ERROR: fid already allocated"
-                                  go unc state -- TODO: report error
-
-  go BS.empty HM.empty
--}
-
 
 main = withSocketsDo $ do
   h <- hostname
@@ -171,8 +124,7 @@ main = withSocketsDo $ do
         receiver <- connectTo receiverName (PortNumber 9998)
         fid <- randomRIO (0,(10^10))
         
-        let send' msg = BS.hPut receiver (runPut (networkMessagePut msg))
-            send msg = BS.hPut receiver (encode msg)
+        let send msg = BS.hPut receiver (encode msg)
             sendTheFile = do
                            chunk <- BS.hGet handle 4096
                            when (not (BS.null chunk)) (send (Chunk fid chunk) >> sendTheFile)
