@@ -75,8 +75,8 @@ clientDirect s who = do
 
       getMore :: IO ByteString
       getMore = do
-        bs <- recv s 4096
-        print bs
+        bs <- recv s (10 * 1024)
+        print ("Received bytes",(BS.length bs))
         return bs
 
   go (Just HM.empty) (Partial (runGetPartial get))
