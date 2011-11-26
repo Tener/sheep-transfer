@@ -12,7 +12,7 @@ Cabal-version:       >=1.2
 Executable sheep-transfer
   Main-is:             sheep.hs
   Build-depends:       base, unordered-containers, 
-                       network, network-multicast, bytestring, filepath, cereal,
+                       network > 2.3.0.0, network-multicast, bytestring, filepath, cereal,
                        process, random, utf8-string, derive
   Other-modules:       DataTypes, Serialize
   
