@@ -88,7 +88,7 @@ main = withSocketsDo $ do
         (sock, addr) <- multicastSender "224.0.0.99" 9999
         print "mcast sender hooked up"
         let loop = do
-                 threadDelay (10^8)
+                 threadDelay (10^7)
                  print "sending hello..."
                  Network.Socket.sendTo sock (show (Hello h)) addr
                  loop
