@@ -1,4 +1,4 @@
-{-# LANGUAGE StandaloneDeriving, TemplateHaskell #-}
+{-# LANGUAGE TemplateHaskell #-}
 module Serialize where
 
 import Data.Serialize
