@@ -8,3 +8,4 @@ import Data.DeriveTH
 import Data.Derive.Serialize
 
 $( derive makeSerialize ''NetworkDirectMessage )
+$( derive makeSerialize ''NetworkMulticastMessage )

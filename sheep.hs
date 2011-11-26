@@ -12,16 +12,18 @@ import qualified Data.ByteString.UTF8 as BS_UTF8
 import qualified Data.HashMap.Strict as HM
 
 import Control.Concurrent
+import Control.Concurrent.STM
 import Control.Exception
 import Control.Monad
 import System.Process
-import System.IO (hClose, openFile, IOMode(..))
+import System.IO (hClose, openFile, IOMode(..), hTell, hFileSize)
+import Data.Ratio ((%))
 import System.FilePath
 import System.Random
 
 import Data.Serialize
 
--- 
+--
 import DataTypes
 import Serialize ()
 
@@ -81,29 +83,53 @@ clientDirect s who = do
 
   go (Just HM.empty) (Partial (runGetPartial get))
 
+-- bcastAddr = "5.255.255.255"
+mcastAddr = "224.0.0.99"
+mcastBindAddr = "0.0.0.0"
+
 main = withSocketsDo $ do
-  h <- hostname
+  h <- (takeWhile (/= '\n')) `fmap` hostname
+
+  peers <- newTVarIO HM.empty
 
   let serverMulticast = do
-        (sock, addr) <- multicastSender "224.0.0.99" 9999
+        (sock, addr) <- multicastSender mcastAddr 9999
+        setInterface sock mcastBindAddr
+        setTimeToLive sock 150
         print "mcast sender hooked up"
         let loop = do
-                 threadDelay (10^7)
                  print "sending hello..."
-                 Network.Socket.sendTo sock (show (Hello h)) addr
+                 Network.Socket.ByteString.sendTo sock (encode (Hello h)) addr
+                 threadDelay (10^8)
                  loop
         loop
 
       clientMulticast = do
-        sock <- multicastReceiver "224.0.0.99" 9999
+        sock <- multicastReceiver mcastAddr 9999
+        setInterface sock mcastBindAddr
+        setTimeToLive sock 150
         print "mcast receiver hooked up"
         let loop = do
-              (msg, _, addr) <- Network.Socket.recvFrom sock 1024
+              (msg, addr) <- Network.Socket.ByteString.recvFrom sock 4096
               print "got something..."
               print (msg, addr)
+              case decode msg of
+                Left err -> print ("Error",err)
+                Right msg -> consumeMulticastMsg addr msg
+              print =<< readTVarIO peers
               loop
         loop
-  
+
+      consumeMulticastMsg addr (Hello nick) = atomically $
+       do
+         m <- readTVar peers
+         writeTVar peers (HM.insert nick addr m)
+
+      consumeMulticastMsg addr (Goodbye nick) = atomically $
+       do
+         m <- readTVar peers
+         writeTVar peers (HM.delete nick m)
+
       serverDirect = do
         sock <- listenOn (PortNumber 9998)
         print "drct server hooked up"
@@ -117,16 +143,26 @@ main = withSocketsDo $ do
       senderDirect = do
         putStrLn "Filename: "
         fileName <- getLine
+        putStrLn "Known peers:"
+        ps <- readTVarIO peers
+        mapM_ (\ (nick,addr) -> do
+                 putStr nick
+                 putStr " -- "
+                 putStrLn (show addr)) (HM.toList ps)
         putStrLn "Receiver: "
         receiverName <- getLine
-                     
+
         handle <- openFile fileName ReadMode
         receiver <- connectTo receiverName (PortNumber 9998)
         fid <- randomRIO (0,(10^10))
-        
+
+        fsize <- hFileSize handle
+
         let send msg = BS.hPut receiver (encode msg)
             sendTheFile = do
                            chunk <- BS.hGet handle 4096
+                           fpos <- hTell handle
+                           print ("File sending progress", fpos, fsize, 100 * (fromRational $ fpos % fsize :: Double))
                            when (not (BS.null chunk)) (send (Chunk fid chunk) >> sendTheFile)
 
         send (Begin fid (BS_UTF8.fromString fileName) BS.empty)
@@ -138,7 +174,7 @@ main = withSocketsDo $ do
         hClose receiver
 
   forkIO $ serverDirect
-  forkIO $ serverMulticast
   forkIO $ clientMulticast
+  forkIO $ serverMulticast
 
   forever $ senderDirect
