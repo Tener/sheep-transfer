@@ -23,6 +23,8 @@ import System.Random
 
 import Data.Serialize
 
+import Config
+
 --
 import DataTypes
 import Serialize ()
@@ -100,7 +102,7 @@ main = withSocketsDo $ do
         let loop = do
                  print "sending hello..."
                  Network.Socket.ByteString.sendTo sock (encode (Hello h)) addr
-                 threadDelay (10^8)
+                 threadDelay sendHelloEvery
                  loop
         loop
 
@@ -160,7 +162,7 @@ main = withSocketsDo $ do
 
         let send msg = BS.hPut receiver (encode msg)
             sendTheFile = do
-                           chunk <- BS.hGet handle 4096
+                           chunk <- BS.hGet handle fileReadChunkSize
                            fpos <- hTell handle
                            print ("File sending progress", fpos, fsize, 100 * (fromRational $ fpos % fsize :: Double))
                            when (not (BS.null chunk)) (send (Chunk fid chunk) >> sendTheFile)
@@ -178,3 +180,4 @@ main = withSocketsDo $ do
   forkIO $ serverMulticast
 
   forever $ senderDirect
+

@@ -7,12 +7,23 @@ Author:              Krzysztof Skrzętnicki
 Maintainer:          gtener@gmail.com
 Category:            Network
 Build-type:          Simple
-Cabal-version:       >=1.2
+Cabal-version:       >=1.10
 
-Executable sheep-transfer
-  Main-is:             sheep.hs
+Executable sheep-transfer-cli
+  Main-is:             sheep-cli.hs
   Build-depends:       base, unordered-containers, 
                        network > 2.3.0.0, network-multicast, bytestring, filepath, cereal,
                        process, random, utf8-string, derive, stm
-  Other-modules:       DataTypes, Serialize
+  Other-modules:       DataTypes, Serialize, Config
+  Default-language:    Haskell2010
   
+Executable sheep-transfer-gtk
+  Main-is:             sheep-gtk.hs
+  Build-depends:       base, unordered-containers, 
+                       network > 2.3.0.0, network-multicast, bytestring, filepath, cereal,
+                       process, random, utf8-string, derive, stm, gtk,
+                       data-default
+  Other-modules:       DataTypes, Serialize, SheepServer, Config
+  Default-extensions:  MultiParamTypeClasses, ViewPatterns
+  Default-language:    Haskell2010
+  Ghc-options:         -threaded
