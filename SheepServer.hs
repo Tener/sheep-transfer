@@ -93,8 +93,9 @@ instance SheepTransferProtocol SheepServer SheepConfig where
             sendTheFile = do
                            chunk <- BS.hGet handle fileReadChunkSize
                            fpos <- hTell handle
-                           onProgress (100 * (fromRational $ fpos % fsize :: Double))
-                           when (not (BS.null chunk)) (send (Chunk fid chunk) >> sendTheFile)
+                           let p = 100 * (fromRational $ fpos % fsize :: Double)
+                           onProgress p
+                           when (not (BS.null chunk)) (send (Chunk fid p chunk) >> sendTheFile)
 
         send (Begin fid (BS_UTF8.fromString filepath) BS.empty)
         sendTheFile
@@ -140,14 +141,14 @@ clientDirect cb s who = do
                                         finishedCb
                                         return ()
                               return (Just $ HM.delete fid state)
-      consumeMessage state (Chunk fid bs) = do
+      consumeMessage state (Chunk fid p bs) = do
                               let len = BS.length bs
-                              print ("Chunk", fid, len)
+                              print ("Chunk", fid, p, len)
                               case HM.lookup fid state of
                                 Nothing -> return ()
                                 Just (h, progCb, _) -> do
                                          BS.hPut h bs
-                                         progCb len
+                                         progCb p -- len
                               return (Just state)
       consumeMessage state (Begin fid fname checksum) = do
                               print ("Begin", fid, fname, checksum)
@@ -169,7 +170,8 @@ clientDirect cb s who = do
       getMore :: IO ByteString
       getMore = do
         bs <- recv s (10 * 1024)
-        print ("Received bytes",(BS.length bs))
+        putStr "."
+        -- print ("Received bytes",(BS.length bs))
         return bs
 
   go (Just HM.empty :: Maybe StateType) (Partial (runGetPartial get))
