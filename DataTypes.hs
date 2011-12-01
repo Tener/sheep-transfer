@@ -12,7 +12,7 @@ data NetworkMulticastMessage = Hello String | Goodbye String
 type FileId = Integer
 
 data NetworkDirectMessage = Begin FileId ByteString ByteString -- file id, filename, checksum
-                          | Chunk FileId ByteString -- file id, file chunk (small, like 1024 * 8)
+                          | Chunk FileId Double ByteString -- file id, progress, file chunk (small, like 1024 * 8)
                           | Finished FileId
                           | Quit
                             deriving (Eq,Show,Read,Ord)
@@ -24,7 +24,7 @@ type StartCallback = FilePath -> FilePath -> HostName -> IO (ProgressCallback, F
 
 type NewConnectionCallback = Address -> IO NewFileCallback
 type NewFileCallback = FileId -> ByteString -> IO (ProgressFileCallback, FinishedFileCallback)
-type ProgressFileCallback = Int -> IO ()
+type ProgressFileCallback = Double -> IO ()
 type FinishedFileCallback = IO ()
 
 type Peer = (Nick,Address)
