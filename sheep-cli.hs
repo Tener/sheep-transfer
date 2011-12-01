@@ -56,8 +56,8 @@ clientDirect s who = do
                                 Nothing -> return ()
                                 Just h -> hClose h
                               return (Just $ HM.delete fid state)
-      consumeMessage state (Chunk fid bs) = do
-                              print ("Chunk", fid, BS.length bs)
+      consumeMessage state (Chunk fid p bs) = do
+                              print ("Chunk", fid, p, BS.length bs)
                               case HM.lookup fid state of
                                 Nothing -> return ()
                                 Just h -> BS.hPut h bs
@@ -142,18 +142,23 @@ main = withSocketsDo $ do
                          (s,who) <- accept sock
                          forkIO (clientDirect s who)
 
+
       senderDirect = do
         putStrLn "Filename: "
         fileName <- getLine
+
         putStrLn "Known peers:"
         ps <- readTVarIO peers
         mapM_ (\ (nick,addr) -> do
                  putStr nick
                  putStr " -- "
                  putStrLn (show addr)) (HM.toList ps)
+
         putStrLn "Receiver: "
         receiverName <- getLine
+        senderDirect' fileName receiverName
 
+      senderDirect' fileName receiverName = do
         handle <- openFile fileName ReadMode
         receiver <- connectTo receiverName (PortNumber 9998)
         fid <- randomRIO (0,(10^10))
@@ -164,8 +169,9 @@ main = withSocketsDo $ do
             sendTheFile = do
                            chunk <- BS.hGet handle fileReadChunkSize
                            fpos <- hTell handle
-                           print ("File sending progress", fpos, fsize, 100 * (fromRational $ fpos % fsize :: Double))
-                           when (not (BS.null chunk)) (send (Chunk fid chunk) >> sendTheFile)
+                           let p = 100 * (fromRational $ fpos % fsize :: Double)
+                           print ("File sending progress", fpos, fsize, p)
+                           when (not (BS.null chunk)) (send (Chunk fid p chunk) >> sendTheFile)
 
         send (Begin fid (BS_UTF8.fromString fileName) BS.empty)
         sendTheFile
@@ -179,5 +185,6 @@ main = withSocketsDo $ do
   forkIO $ clientMulticast
   forkIO $ serverMulticast
 
+  -- senderDirect' "/home/tener/downloads/systemrescuecd-x86-2.3.0.iso" "localhost"
   forever $ senderDirect
 
