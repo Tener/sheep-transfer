@@ -30,9 +30,11 @@ import System.IO (hClose, openFile, IOMode(..), hTell, hFileSize, Handle)
 import Data.Ratio ((%))
 import System.FilePath
 import System.Random
-
+import qualified Data.Map as Map
 
 import Data.Serialize
+
+import Data.Time
 
 import Config
 
@@ -193,11 +195,24 @@ start (SheepConfig
   nick <- newTVarIO =<< fromMaybeM hostname mnick
   peers <- newTVarIO HM.empty
   peersChanged <- newTVarIO peersChangedCb
+  
+  timers <- newTVarIO Map.empty
 
-  let serverMulticast = do
+  let cleanupHosts = do
+                         tim <- readTVarIO timers
+                         now <- getCurrentTime
+                         let isOld time = round (diffUTCTime now time) > 5
+                         forM_ (filter (isOld . snd) (Map.toList tim)) $ \ (n,_) -> do
+                             b <- consumeMulticastMsg (error "not defined for sure") (Goodbye n)
+                             cb <- readTVarIO peersChanged
+                             when b cb
+                      
+                         atomically $ do
+                             writeTVar timers (Map.filter (not . isOld) tim)
+
+
+      serverMulticast = do
         (sock, addr) <- multicastSender maddr (fromIntegral mport)
---        setInterface sock mcastBindAddr
---        setTimeToLive sock 150
         print "mcast sender hooked up"
         let loop = do
                  print "sending hello..."
@@ -209,8 +224,6 @@ start (SheepConfig
 
       clientMulticast = do
         sock <- multicastReceiver maddr (fromIntegral mport)
---        setInterface sock mcastBindAddr
---        setTimeToLive sock 150
         print "mcast receiver hooked up"
         let loop = do
               (msg, addr) <- Network.Socket.ByteString.recvFrom sock 4096
@@ -226,14 +239,18 @@ start (SheepConfig
               loop
         loop `finally` sClose sock
 
-      consumeMulticastMsg addr (Hello nick) = atomically $
+      consumeMulticastMsg addr (Hello nick) = getCurrentTime >>= \ time -> atomically $
        do
+         tim <- readTVar timers
+         let tim' = Map.insert nick time tim
+         writeTVar timers tim'
+
          m <- readTVar peers
          let m' = (HM.insert nick addr m)
          writeTVar peers m'
          return (m' /= m)
 
-      consumeMulticastMsg addr (Goodbye nick) = atomically $
+      consumeMulticastMsg _ (Goodbye nick) = atomically $
        do
          m <- readTVar peers
          let m' = (HM.delete nick m)
@@ -251,11 +268,10 @@ start (SheepConfig
                          cb <- readTVarIO newConn
                          forkIO (clientDirect cb s who)
    
+  forkIO (forever (cleanupHosts >> threadDelay (10^6)))
   tid'1 <- forkIO $ serverDirect
   tid'2 <- forkIO $ clientMulticast
   tid'3 <- forkIO $ serverMulticast
-
-  -- forever $ senderDirect
 
   return $ SheepServer tid'1 tid'2 tid'3 nick peers newConn peersChanged
 
