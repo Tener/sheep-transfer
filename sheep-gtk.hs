@@ -235,6 +235,10 @@ main = do
 
   connections <- newTVarIO []
 
+  let showMainAll = postGUIAsync $ do
+                      widgetShowAll w
+  forkIO $ forever (threadDelay (10^5) >> showMainAll)
+
   mainGUI
 
   stopServer serv
