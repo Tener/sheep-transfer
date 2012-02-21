@@ -1,4 +1,4 @@
-{-# LANGUAGE FunctionalDependencies #-}
+{-# LANGUAGE FunctionalDependencies, MultiParamTypeClasses #-}
 
 module DataTypes where
 
