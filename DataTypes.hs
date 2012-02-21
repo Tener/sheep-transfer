@@ -20,10 +20,10 @@ data NetworkDirectMessage = Begin FileId ByteString ByteString -- file id, filen
 
 type ProgressCallback = Double -> IO ()
 type FinishedCallback = IO ()
-type StartCallback = FilePath -> FilePath -> HostName -> IO (ProgressCallback, FinishedCallback)
+-- type StartCallback = FilePath -> FilePath -> HostName -> IO (ProgressCallback, FinishedCallback)
 
 type NewConnectionCallback = Address -> IO NewFileCallback
-type NewFileCallback = FileId -> ByteString -> IO (ProgressFileCallback, FinishedFileCallback)
+type NewFileCallback = FileId -> (FilePath,FilePath,ByteString) -> IO (ProgressFileCallback, FinishedFileCallback)
 type ProgressFileCallback = Double -> IO ()
 type FinishedFileCallback = IO ()
 

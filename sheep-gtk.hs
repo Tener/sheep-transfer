@@ -16,6 +16,9 @@ import Data.ByteString (ByteString)
 import Data.IORef
 import Network.Socket(getNameInfo)
 
+import System.Directory
+import System.FilePath
+
 --class InjectableWidget w where
 
 class WidgetLike w where
@@ -39,6 +42,10 @@ scrollWindowLookAtBottom sw = do
   adjustmentSetValue adj =<< adjustmentGetUpper adj
   return ()
 
+mkAbsolute path = do
+  canon <- canonicalizePath =<< (makeRelativeToCurrentDirectory path)
+  curr <- getCurrentDirectory
+  canonicalizePath (curr </> canon)
 
 main = do
   initGUI
@@ -81,8 +88,33 @@ main = do
           putMVar var connwidget
          connwidget <- takeMVar var
 
-         let newFileCb fid fp = do
-                ftw <- postGUIAsync' $ newFileTransferWidget fid fp connwidget
+         let newFileCb fid fp@(file1,file2,fname) = do
+                ftw <- postGUIAsync' $ do
+                                  ft <- newFileTransferWidget fid fname connwidget
+                                  buttonSaveAs <- buttonNewWithLabel "Save as..."
+                                  on buttonSaveAs buttonActivated $ do
+                                        let resp = [("Wybierz plik",ResponseOk)]
+                                                    
+                                        dialog <- fileChooserDialogNew (Just "Wybierz plik") Nothing FileChooserActionOpen resp
+                                        dResp <- dialogRun dialog
+                                        print dResp
+                                        fname <- fileChooserGetFilename dialog
+                                        widgetHide dialog
+                                        print fname
+
+                                        case fname of
+                                          Nothing -> return ()
+                                          Just fn -> copyFile file2 fn
+                                                      
+                                  canon <- mkAbsolute file2
+                                  buttonOpen <- linkButtonNewWithLabel ("file://" ++ canon) "Open..."
+                                  let wb = ft_wholeBox ft
+                                  containerAdd wb buttonSaveAs
+                                  containerAdd wb buttonOpen
+                                  widgetShowAll wb
+                                  return ft
+                                  
+
                 printlog ("new file", fid, fp, host)
                 let progress p = postGUIAsync $ progressBarSetFraction (ft_progress ftw) (p/100) >> printlog ("progress", p, fid, fp, host)
                     finished = postGUIAsync $ progressBarSetFraction (ft_progress ftw) 1 >> printlog ("finished", fid, fp, host)
@@ -108,7 +140,6 @@ main = do
          pgbar <- progressBarNew
          progressBarSetText pgbar txt
          wholeBox <- vBoxNew False 1
---         containerAdd wholeBox l
          containerAdd wholeBox pgbar
          containerAdd ftbox wholeBox
          widgetShowAll ftbox
@@ -122,6 +153,7 @@ main = do
              txt = case filter (\ (_, a) -> a == addr) peers of
                           [] -> show addr
                           (head -> (nick,_)) -> formatMarkupNick nick
+
          l <- labelNew Nothing
          labelSetMarkup l txt
          connListBox <- vBoxNew False 1

@@ -160,7 +160,7 @@ clientDirect cb s who = do
                                   writeFile n1 (show (who,fid,fname,checksum))
                                   h <- openFile n2 WriteMode
                                   print ("File names", n1, n2)
-                                  (progCb, finishedCb) <- newFileCallback fid fname
+                                  (progCb, finishedCb) <- newFileCallback fid (n1,n2,fname)
                                   let val = (h, progCb, finishedCb)
                                   return (Just $ HM.insert fid val state)
                                 Just _ -> do
