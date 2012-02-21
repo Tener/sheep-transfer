@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns, MultiParamTypeClasses #-}
 
 module SheepServer ( SheepServer, SheepConfig(..), debugSheepServer) where
 

@@ -1,4 +1,4 @@
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE ViewPatterns, MultiParamTypeClasses #-}
 module Main where
 
 import Graphics.UI.Gtk
@@ -13,6 +13,8 @@ import Data.Default
 import System.IO (fixIO)
 import Text.Printf
 import Data.ByteString (ByteString)
+import Data.IORef
+import Network.Socket(getNameInfo)
 
 --class InjectableWidget w where
 
@@ -57,6 +59,8 @@ main = do
   containerAdd mainview logview
   containerAdd mainview hostview
   containerAdd mainview connview
+
+  servRef <- newIORef (error "empty ref")
 
   let log msg = postGUIAsync $ do
          l <- labelNew (Just (show msg))
@@ -136,16 +140,37 @@ main = do
              sub1 = markSpan [FontSize SizeSmall, FontBackground "gray"] (escapeMarkup (show addr))
          l <- labelNew Nothing
          labelSetMarkup l txt
-         return (toWidget l)
+         b <- buttonNew
+         on b buttonActivated $ do
+           let resp = [("Wybierz plik",ResponseOk)]
+                       
+           dialog <- fileChooserDialogNew (Just "Wybierz plik") Nothing FileChooserActionOpen resp
+           dResp <- dialogRun dialog
+           print dResp
+           fname <- fileChooserGetFilename dialog
+           widgetHide dialog
+
+           print fname
+           serv <- readIORef servRef
+           (Just connAddr,_) <- getNameInfo [] True False addr
+           print connAddr
+           case fname of
+             Nothing -> return ()
+             Just fn -> forkIO (sendFilePeer serv fn connAddr (\d -> print ("gui:prog",d)) (print "gui:done")) >> return ()
+
+         containerAdd b l
+         return (toWidget b)
 
       sheepConf ser = def { confNewConnCb = newconncb ser, peersChangedCb = peerschangedcb ser }
+
+  serv <- fixIO (\ ser -> startServer (sheepConf ser)) :: IO SheepServer
+  writeIORef servRef serv
+  debugSheepServer serv
+     
 
   forkIO (forever $ do
             log "Ping.."
             threadDelay (10^8))
-
-  serv <- fixIO (\ ser -> startServer (sheepConf ser)) :: IO SheepServer
-  debugSheepServer serv
 
   w <- windowNew
   windowSetDefaultSize w 200 200
