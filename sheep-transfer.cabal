@@ -22,7 +22,7 @@ Executable sheep-transfer-gtk
   Build-depends:       base, unordered-containers, 
                        network > 2.3.0.0, network-multicast, bytestring, filepath, cereal,
                        process, random, utf8-string, derive, stm, gtk,
-                       data-default
+                       data-default, directory
   Other-modules:       DataTypes, Serialize, SheepServer, Config
   Default-extensions:  MultiParamTypeClasses, ViewPatterns
   Default-language:    Haskell2010
