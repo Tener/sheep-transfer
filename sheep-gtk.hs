@@ -236,3 +236,5 @@ main = do
   connections <- newTVarIO []
 
   mainGUI
+
+  stopServer serv
