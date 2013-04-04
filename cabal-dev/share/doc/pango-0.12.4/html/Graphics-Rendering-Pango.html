@@ -1,0 +1,28 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>Graphics.Rendering.Pango</title><link href="ocean.css" rel="stylesheet" type="text/css" title="Ocean" /><script src="haddock-util.js" type="text/javascript"></script><script type="text/javascript">//<![CDATA[
+window.onload = function () {pageLoad();setSynopsis("mini_Graphics-Rendering-Pango.html");};
+//]]>
+</script></head><body><div id="package-header"><ul class="links" id="page-menu"><li><a href="index.html">Contents</a></li><li><a href="doc-index.html">Index</a></li></ul><p class="caption">pango-0.12.4: Binding to the Pango text rendering engine.</p></div><div id="content"><div id="module-header"><table class="info"><tr><th>Portability</th><td>portable (depends on GHC)</td></tr><tr><th>Stability</th><td>provisional</td></tr><tr><th>Maintainer</th><td>gtk2hs-users@lists.sourceforge.net</td></tr><tr><th>Safe Haskell</th><td>Safe-Infered</td></tr></table><p class="caption">Graphics.Rendering.Pango</p></div><div id="description"><p class="caption">Description</p><div class="doc"><p>Pango is a library for laying out and rendering of text, with an emphasis
+ on internationalization. Pango can be used anywhere that text layout is
+ needed, though most of the work on Pango so far has been done in the
+ context of the GTK+ widget toolkit. Pango forms the core of text and font
+ handling for GTK+-2.x.
+</p><p>Pango is designed to be modular; the core Pango layout engine can be used
+ with different font backends. There are three basic backends:
+</p><ul><li> Client side fonts using the FreeType and fontconfig libraries.
+</li><li> Native fonts on Microsoft Windows using Uniscribe for complex-text handling.
+</li><li> Native fonts on MacOS X using ATSUI for complex-text handling.
+</li></ul><p>The integration of Pango
+ with Cairo &lt;http:
+ high quality text handling and graphics rendering.
+</p><p>Dynamically loaded modules then handle text layout for particular
+ combinations of script and font backend. Pango ships with a wide selection
+ of modules, including modules for Hebrew, Arabic, Hangul, Thai, and a
+ number of Indic scripts. Virtually all of the world's major scripts are
+ supported.
+</p><p>As well as the low level layout rendering routines, Pango includes
+ <code><a href="Graphics-Rendering-Pango-Layout.html#t:PangoLayout">PangoLayout</a></code>, a high level driver for laying out entire blocks of text, and
+ routines to assist in editing internationalized text.
+</p><p>Pango depends on 2.x series of the GLib library.
+</p><p>This module only re-exports the parts of the Pango library that are relevant for
+ text rendering (as opposed to integration with other libraries).
+</p></div></div><div id="interface"><h1>Documentation</h1><div class="top"><p class="src">module <a href="Graphics-Rendering-Pango-Context.html">Graphics.Rendering.Pango.Context</a></p></div><div class="top"><p class="src">module <a href="Graphics-Rendering-Pango-Layout.html">Graphics.Rendering.Pango.Layout</a></p></div><div class="top"><p class="src">module <a href="Graphics-Rendering-Pango-Rendering.html">Graphics.Rendering.Pango.Rendering</a></p></div><div class="top"><p class="src">module <a href="Graphics-Rendering-Pango-Markup.html">Graphics.Rendering.Pango.Markup</a></p></div><div class="top"><p class="src">module <a href="Graphics-Rendering-Pango-Font.html">Graphics.Rendering.Pango.Font</a></p></div><div class="top"><p class="src">module <a href="Graphics-Rendering-Pango-Enums.html">Graphics.Rendering.Pango.Enums</a></p></div><div class="top"><p class="src">module <a href="Graphics-Rendering-Pango-Cairo.html">Graphics.Rendering.Pango.Cairo</a></p></div></div></div><div id="footer"><p>Produced by <a href="http://www.haskell.org/haddock/">Haddock</a> version 2.10.0</p></div></body></html>
