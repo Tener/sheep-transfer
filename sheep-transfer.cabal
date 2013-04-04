@@ -21,11 +21,10 @@ Library
 
 Executable sheep-transfer-cli
   Main-is:             sheep-cli.hs
-  Build-depends:       base, unordered-containers, 
+  Build-depends:       sheep-transfer, base, unordered-containers, 
                        network > 2.3.0.0, network-multicast, bytestring, filepath, cereal,
                        process, random, utf8-string, derive, stm
   Hs-source-dirs:      src
-  Other-modules:       DataTypes, Serialize, Config
   Default-language:    Haskell2010
   
 Executable sheep-transfer-gtk
