@@ -47,29 +47,11 @@ mkAbsolute path = do
   curr <- getCurrentDirectory
   canonicalizePath (curr </> canon)
 
-main = do
-  initGUI
-
-  logbox <- vBoxNew False 5
-  logview <- scrolledWindowNew Nothing Nothing
-  scrolledWindowAddWithViewport logview logbox
-
-  hostbox <- vBoxNew False 5
-  hostview <- scrolledWindowNew Nothing Nothing
-  scrolledWindowAddWithViewport hostview hostbox
-
-  connbox <- vBoxNew False 5
-  connview <- scrolledWindowNew Nothing Nothing
-  scrolledWindowAddWithViewport connview connbox
-
-  mainview <- vBoxNew True 5
-  containerAdd mainview logview
-  containerAdd mainview hostview
-  containerAdd mainview connview
-
-  servRef <- newIORef (error "empty ref")
-
-  let log msg = postGUIAsync $ do
+mkSheepConf logbox logview hostbox hostview connbox connview mainview servRef =
+  (log, serverConf)
+   where
+      serverConf ser = def { confNewConnCb = newconncb ser, peersChangedCb = peerschangedcb ser }
+      log msg = postGUIAsync $ do
          l <- labelNew (Just (show msg))
          boxPackStart logbox l PackNatural 0
          widgetShowAll logbox
@@ -193,17 +175,39 @@ main = do
          containerAdd b l
          return (toWidget b)
 
-      sheepConf ser = def { confNewConnCb = newconncb ser, peersChangedCb = peerschangedcb ser }
 
+
+main = do
+  initGUI
+
+  logbox <- vBoxNew False 5
+  logview <- scrolledWindowNew Nothing Nothing
+  scrolledWindowAddWithViewport logview logbox
+
+  hostbox <- vBoxNew False 5
+  hostview <- scrolledWindowNew Nothing Nothing
+  scrolledWindowAddWithViewport hostview hostbox
+
+  connbox <- vBoxNew False 5
+  connview <- scrolledWindowNew Nothing Nothing
+  scrolledWindowAddWithViewport connview connbox
+
+  mainview <- vBoxNew True 5
+  containerAdd mainview logview
+  containerAdd mainview hostview
+  containerAdd mainview connview
+
+  servRef <- newIORef (error "empty ref")
+
+  let (logMsg,sheepConf) = mkSheepConf logbox logview hostbox hostview connbox connview mainview servRef
   serv <- fixIO (\ ser -> startServer (sheepConf ser)) :: IO SheepServer
   writeIORef servRef serv
   debugSheepServer serv
-     
 
   forkIO (forever $ do
-            log "Ping.."
+            logMsg "Ping.."
             threadDelay (10^8))
-
+  
   w <- windowNew
   windowSetDefaultSize w 200 200
   windowSetPosition w WinPosCenterAlways
@@ -218,27 +222,9 @@ main = do
   onDestroy w mainQuit
   windowPresent w
 
---  let setupTray = postGUIAsync $ do
---         trayIcon <- statusIconNewFromFile "sheep.png"
---         statusIconSetTooltip trayIcon "Sheep Transfer"
---         statusIconSetBlinking trayIcon False
---         statusIconSetName trayIcon "Sheep Transfer"
---         statusIconSetVisible trayIcon True
---         on trayIcon statusIconActivate $ do
---                    b <- windowIsActive w
---                    print ("statusIconActivate", b)
---                    if not b then windowIconify w else windowDeiconify w
---                    return ()
---         return ()
---  forkIO (threadDelay (10^6) >> setupTray >> return ())
---  setupTray
-
   connections <- newTVarIO []
-
   let showMainAll = postGUIAsync $ do
                       widgetShowAll w
   forkIO $ forever (threadDelay (10^5) >> showMainAll)
-
   mainGUI
-
   stopServer serv
